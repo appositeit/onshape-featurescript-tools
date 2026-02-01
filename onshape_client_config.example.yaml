@@ -1,0 +1,16 @@
+# Onshape API credentials
+# Copy this file to ~/.onshape_client_config.yaml and fill in your keys.
+#
+# Get API keys from Onshape:
+#   1. Sign in to https://cad.onshape.com
+#   2. Click user icon (top right) > My Account > Developer
+#   3. Create new API key (ensure Write access is enabled)
+#   4. Copy both Access Key and Secret Key (secret is only shown once)
+#
+# Security: chmod 600 ~/.onshape_client_config.yaml
+
+default_stack: onshape
+onshape:
+  base_url: https://cad.onshape.com
+  access_key: YOUR_ACCESS_KEY_HERE
+  secret_key: YOUR_SECRET_KEY_HERE

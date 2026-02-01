@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onshape-featurescript-tools"
+version = "0.1.0"
+description = "Deploy FeatureScript files to Onshape Feature Studios via the REST API"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+deploy-featurescript = "deploy:main"
+
+[tool.setuptools]
+py-modules = ["deploy"]
