@@ -3,18 +3,22 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "onshape-featurescript-tools"
-version = "0.1.0"
-description = "Deploy FeatureScript files to Onshape Feature Studios via the REST API"
+name = "onshape-laser-tools"
+version = "0.2.0"
+description = "Onshape FeatureScript tools and laser cutting pipeline: design, export, convert, cut"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
 dependencies = [
     "pyyaml>=6.0",
+    "ezdxf>=1.0",
+    "requests>=2.28",
 ]
 
 [project.scripts]
 deploy-featurescript = "deploy:main"
+dxf2gcode = "dxf2gcode:main"
+fluidnc-upload = "fluidnc_upload:main"
 
 [tool.setuptools]
-py-modules = ["deploy"]
+py-modules = ["deploy", "dxf2gcode", "fluidnc_upload"]

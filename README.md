@@ -1,10 +1,66 @@
-# Onshape FeatureScript Tools
+# Onshape Laser Tools
 
-Custom FeatureScript features for Onshape CAD, with a command-line deployment tool. Designed for laser cutting workflows.
+Design, export, convert, and cut — a complete pipeline from Onshape CAD to laser cutter.
 
-## Features
+## Pipeline Overview
 
-### Box Panelise
+```
+Onshape CAD         DXF File           G-code File        Laser Cutter
+┌──────────┐       ┌──────────┐       ┌──────────┐       ┌──────────┐
+│ Design   │──────>│  Export  │──────>│ Convert  │──────>│  Upload  │
+│ + Panel  │ DXF   │  .dxf    │ G-code│  .gcode  │ WiFi  │  + Cut   │
+│ + Joint  │Export  │          │       │          │       │          │
+└──────────┘       └──────────┘       └──────────┘       └──────────┘
+ Box Panelise      onshape_dxf_       dxf2gcode          fluidnc-upload
+ Laser Joint       exporter*
+ deploy-featurescript
+```
+
+\* DXF export uses [onshape_dxf_exporter](https://github.com/Verusio/onshape_dxf_exporter) (separate install).
+
+## Tools Included
+
+| Tool | Purpose | Install |
+|------|---------|---------|
+| **Box Panelise** | FeatureScript: decompose solid into overlapping flat panels | Add to Onshape toolbar |
+| **deploy-featurescript** | Push `.fs` files to Onshape Feature Studios via REST API | `pip install -e .` |
+| **dxf2gcode** | Convert DXF files to laser cutting G-code | `pip install -e .` |
+| **fluidnc-upload** | Upload G-code to FluidNC controllers over WiFi | `pip install -e .` |
+
+## Quick Start
+
+### 1. Use Box Panelise in Onshape (no install needed)
+
+Add it directly to your Onshape toolbar:
+
+1. Open any Part Studio in Onshape
+2. Right-click the feature toolbar > **Add custom features**
+3. Paste this URL:
+   ```
+   https://cad.onshape.com/documents/d5cbe7ac763a9b5cd7157012/v/36a761cffd49e0b3cc803485/e/bb4062cf99d0ba6b42abdeac
+   ```
+4. Select **Box Panelise** and click **Add**
+
+### 2. Install CLI Tools
+
+```bash
+git clone https://github.com/appositeit/onshape-featurescript-tools.git
+cd onshape-featurescript-tools
+
+# Set up virtual environment and install
+./setup.sh
+
+# Or manually:
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+### 3. Configure Onshape API Keys
+
+Required only for `deploy-featurescript`. See [API Keys](#api-keys) below.
+
+## Box Panelise
 
 Decomposes a solid body into separate overlapping flat panels for laser cutting. The panels overlap at corners, ready for the [Laser Joint](https://cad.onshape.com/documents/578830e4e4b0e65410f9c34e/w/14918498c2d2dd64c3b253e9/e/dfd5effddfd7f2ecce4b0246) feature (AUTO mode) to create finger joints.
 
@@ -19,64 +75,112 @@ Decomposes a solid body into separate overlapping flat panels for laser cutting.
 3. Collects all face fragments on that plane (preserving cutout holes)
 4. Extracts each face group as a surface and thickens it inward
 
-Works on any convex solid with planar faces — not just rectangular boxes. Cutouts and holes in faces are preserved in the panels.
+Works on any convex solid with planar faces. Cutouts and holes are preserved in the panels.
 
-### Deploy Tool
+**Typical workflow:**
+1. Model your enclosure as a solid body in Onshape
+2. Add cutouts (ventilation holes, ports, etc.)
+3. Apply **Box Panelise** to create panels
+4. Apply **Laser Joint** (AUTO mode) to all panels for finger joints
+5. Export each panel face as DXF for laser cutting
 
-Command-line tool to push `.fs` files to Onshape Feature Studios via the REST API. No more copy/pasting FeatureScript source in the browser.
+## deploy-featurescript
 
-## Installation
-
-### Use in Onshape (no coding required)
-
-The easiest way to use Box Panelise is to add it directly to your Onshape toolbar:
-
-1. Open any Onshape document
-2. In a Part Studio, right-click the feature toolbar and select **Add custom features**
-3. Paste this document URL:
-   ```
-   https://cad.onshape.com/documents/d5cbe7ac763a9b5cd7157012/v/36a761cffd49e0b3cc803485/e/bb4062cf99d0ba6b42abdeac
-   ```
-4. Select **Box Panelise** and click **Add**
-5. The feature now appears in your toolbar for all documents
-
-### Deploy Tool (for developers)
-
-If you want to modify the FeatureScript or deploy your own features, install the CLI tool:
-
-#### Prerequisites
-
-- Python 3.8+
-- An [Onshape](https://cad.onshape.com) account (free or paid)
-- Onshape API keys (see [API Keys](#api-keys) below)
-
-### Quick Start
+Push FeatureScript `.fs` files to Onshape Feature Studios via the REST API.
 
 ```bash
-git clone https://github.com/appositeit/onshape-featurescript-tools.git
-cd onshape-featurescript-tools
+# Deploy by URL (copy from browser address bar)
+deploy-featurescript featurescripts/box_panelise.fs \
+  --url "https://cad.onshape.com/documents/DOC_ID/w/WORKSPACE_ID/e/ELEMENT_ID"
 
-# Set up virtual environment and install dependencies
-./setup.sh
-
-# Configure API keys
-cp onshape_client_config.example.yaml ~/.onshape_client_config.yaml
-# Edit the file with your API keys (see below)
+# Or specify IDs directly
+deploy-featurescript featurescripts/box_panelise.fs \
+  -d DOCUMENT_ID -w WORKSPACE_ID -e ELEMENT_ID
 ```
 
-### Manual Setup
+The tool reads the `.fs` source, pushes it to the Feature Studio, and reports any compilation errors with line numbers.
 
-If you prefer not to use the setup script:
+## dxf2gcode
+
+Convert DXF files to G-code for laser cutting. Supports LINE, CIRCLE, ARC, and LWPOLYLINE entities.
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
+# Basic conversion
+dxf2gcode panel.dxf
+
+# Set laser power and feed rate
+dxf2gcode panel.dxf -o panel.gcode -p 800 -f 3000
+
+# With header/footer for machine startup/shutdown
+dxf2gcode panel.dxf --header examples/gcode/header.gcode --footer examples/gcode/footer.gcode
+```
+
+**Options:**
+- `-o, --output` — Output file (default: `<input>.gcode`)
+- `-p, --power` — Laser power S value (default: 1000)
+- `-f, --feed` — Feed rate in mm/min (default: 6000)
+- `-r, --rapid` — Rapid travel rate in mm/min (default: 6000)
+- `--header` — G-code file to prepend (machine startup sequence)
+- `--footer` — G-code file to append (machine shutdown sequence)
+- `--no-header` — Skip header even if specified
+- `--no-footer` — Skip footer even if specified
+
+### Header and Footer Templates
+
+Example templates are provided in `examples/gcode/`. Customise these for your machine:
+
+**header.gcode** — Machine startup (units, positioning, safety):
+```gcode
+G21         ; Set units to millimeters
+G90         ; Absolute positioning
+M5 S0       ; Ensure laser is off
+G0 F6000    ; Set rapid travel speed
+G1 F1000    ; Set default cutting speed
+```
+
+**footer.gcode** — Machine shutdown (laser off, return home):
+```gcode
+M5          ; Turn off laser
+G0 X0 Y0    ; Return to home position
+M2          ; End program
+```
+
+The templates include notes on FluidNC `$HTTP=` commands for IoT integration (e.g. triggering Home Assistant to control cooling, ventilation, or air assist).
+
+## fluidnc-upload
+
+Upload G-code files to a [FluidNC](https://github.com/bdring/FluidNC) controller (ESP32-based CNC/laser controller) over WiFi.
+
+```bash
+# Upload to FluidNC on the local network
+fluidnc-upload panel.gcode --host 192.168.1.100
+
+# Upload multiple files
+fluidnc-upload *.gcode --host laser.local
+
+# Upload to flash instead of SD card
+fluidnc-upload panel.gcode --host 192.168.1.100 --flash
+```
+
+**Options:**
+- `--host` — FluidNC hostname or IP (default: localhost)
+- `--port` — FluidNC port (default: 80)
+- `--flash` — Upload to flash filesystem instead of SD card
+
+The tool automatically replaces existing files with the same name on the controller.
+
+## DXF Export from Onshape
+
+To export DXF files from Onshape, use [onshape_dxf_exporter](https://github.com/Verusio/onshape_dxf_exporter). It exports individual part faces as DXF files via the Onshape API — useful for getting laser-ready 2D profiles from your 3D parts.
+
+Install it separately:
+```bash
+pip install onshape_dxf_exporter
 ```
 
 ## API Keys
 
-The deploy tool authenticates with Onshape using API key pairs.
+Required for `deploy-featurescript` and `onshape_dxf_exporter`.
 
 ### Getting API Keys
 
@@ -101,62 +205,32 @@ onshape:
   secret_key: YOUR_SECRET_KEY_HERE
 ```
 
-An example config file is included as `onshape_client_config.example.yaml`.
+An example config is included as `onshape_client_config.example.yaml`.
 
 **Security notes:**
 - Never commit your actual API keys to version control
-- The config file should only be readable by your user: `chmod 600 ~/.onshape_client_config.yaml`
-- If a key is compromised, delete it immediately in My Account > Developer and create a new one
-
-## Usage
-
-### Deploying FeatureScript
-
-First, create a Feature Studio in your Onshape document (right-click in the tab bar, "Create Feature Studio").
-
-Then deploy a `.fs` file to it:
-
-```bash
-# Activate the virtual environment
-source .venv/bin/activate
-
-# Deploy to a Feature Studio by URL
-deploy-featurescript featurescripts/box_panelise.fs \
-  --url "https://cad.onshape.com/documents/YOUR_DOC_ID/w/YOUR_WORKSPACE_ID/e/YOUR_ELEMENT_ID"
-
-# Or specify IDs directly
-deploy-featurescript featurescripts/box_panelise.fs \
-  -d DOCUMENT_ID -w WORKSPACE_ID -e ELEMENT_ID
-```
-
-The tool will:
-1. Read the `.fs` source file
-2. Push it to the Feature Studio via the Onshape API
-3. Report any compilation errors with line numbers
-
-After deploying, the feature appears in the Part Studio's feature menu (under the Feature Studio's name).
-
-### Using Box Panelise in Onshape
-
-1. Deploy `box_panelise.fs` to a Feature Studio in your document
-2. Open a Part Studio containing a solid body
-3. Click the feature menu and select **Box Panelise**
-4. Select the solid body, set material thickness
-5. Click the green checkmark
-6. Apply **Laser Joint** (AUTO mode) to the resulting panels for finger joints
+- Set file permissions: `chmod 600 ~/.onshape_client_config.yaml`
+- If a key is compromised, delete it in My Account > Developer and create a new one
 
 ## Project Structure
 
 ```
 .
 ├── featurescripts/
-│   └── box_panelise.fs      # FeatureScript source files
-├── deploy.py                 # Deployment tool source
+│   └── box_panelise.fs               # FeatureScript source
+├── deploy.py                          # FeatureScript deployment tool
+├── dxf2gcode.py                       # DXF to G-code converter
+├── fluidnc_upload.py                  # FluidNC file uploader
+├── examples/
+│   └── gcode/
+│       ├── header.gcode               # Machine startup template
+│       └── footer.gcode               # Machine shutdown template
 ├── doc/
-│   └── onshape-featurescript-guide.md  # Development guide
-├── pyproject.toml            # Python package config
-├── setup.sh                  # Quick setup script
-└── onshape_client_config.example.yaml  # Example API config
+│   └── onshape-featurescript-guide.md # FeatureScript development guide
+├── pyproject.toml                     # Python package config
+├── setup.sh                           # Quick setup script
+├── onshape_client_config.example.yaml # Example API config
+└── LICENSE                            # MIT License
 ```
 
 ## Development Guide
