@@ -35,7 +35,7 @@ The easiest way to use Box Panelise is to add it directly to your Onshape toolba
 2. In a Part Studio, right-click the feature toolbar and select **Add custom features**
 3. Paste this document URL:
    ```
-   https://cad.onshape.com/documents/a16903b7881e31c551252076/v/2b378c5c29b40f49c13e33f3/e/ba8829e72e3df0405808b342
+   https://cad.onshape.com/documents/d5cbe7ac763a9b5cd7157012/v/36a761cffd49e0b3cc803485/e/bb4062cf99d0ba6b42abdeac
    ```
 4. Select **Box Panelise** and click **Add**
 5. The feature now appears in your toolbar for all documents
