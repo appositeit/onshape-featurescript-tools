@@ -27,7 +27,24 @@ Command-line tool to push `.fs` files to Onshape Feature Studios via the REST AP
 
 ## Installation
 
-### Prerequisites
+### Use in Onshape (no coding required)
+
+The easiest way to use Box Panelise is to add it directly to your Onshape toolbar:
+
+1. Open any Onshape document
+2. In a Part Studio, right-click the feature toolbar and select **Add custom features**
+3. Paste this document URL:
+   ```
+   https://cad.onshape.com/documents/a16903b7881e31c551252076/v/2b378c5c29b40f49c13e33f3/e/ba8829e72e3df0405808b342
+   ```
+4. Select **Box Panelise** and click **Add**
+5. The feature now appears in your toolbar for all documents
+
+### Deploy Tool (for developers)
+
+If you want to modify the FeatureScript or deploy your own features, install the CLI tool:
+
+#### Prerequisites
 
 - Python 3.8+
 - An [Onshape](https://cad.onshape.com) account (free or paid)
@@ -36,7 +53,7 @@ Command-line tool to push `.fs` files to Onshape Feature Studios via the REST AP
 ### Quick Start
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/appositeit/onshape-featurescript-tools.git
 cd onshape-featurescript-tools
 
 # Set up virtual environment and install dependencies
